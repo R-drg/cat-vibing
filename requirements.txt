@@ -2,4 +2,5 @@ opencv-python
 numpy
 sacad
 moviepy
-yt-dlp
+yt-dlp 
+boto3
