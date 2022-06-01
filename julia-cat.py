@@ -2,10 +2,28 @@ import cv2
 import numpy as np
 import os
 from moviepy.editor import *
-from requests import get
 from yt_dlp import YoutubeDL
 import sys
+import tweepy
+from dotenv import load_dotenv
 
+load_dotenv()
+
+CONSUMER_KEY=os.environ['CONSUMER_KEY']
+CONSUMER_SECRET=os.environ['CONSUMER_SECRET']
+ACCESS_TOKEN=os.environ['ACCESS_TOKEN']
+ACCESS_SECRET = os.environ['ACCESS_SECRET']
+
+# OAuth process, using the keys and tokens
+auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
+
+# Creation of the actual interface, using authentication
+api = tweepy.API(auth)
+
+def post_video(artist, song):
+    upload_result = api.media_upload('output.mp4')
+    api.update_status(status=artist + " - " + song, media_ids=[upload_result.media_id_string])
 
 # search string on youtube and download mp3
 def download_mp3(search_string):
@@ -63,3 +81,4 @@ if __name__ == "__main__":
     artist = sys.argv[2]
     song = sys.argv[3]
     create_cat_video(artist,album,song)
+    post_video(artist,song)
