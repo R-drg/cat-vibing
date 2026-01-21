@@ -34,7 +34,7 @@ def search_album(artist, song):
                         if not any(
                             r["title"] == release_title and r["type"] == release_type
                             for r in releases
-                        ):
+                        ) and release_type in ["Album", "EP", "Single"]:
                             releases.append(
                                 {"title": release_title, "type": release_type}
                             )
