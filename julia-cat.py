@@ -23,19 +23,52 @@ def search_album(artist, song):
         )
 
         if result["recording-list"]:
+            releases = []
             for recording in result["recording-list"]:
                 if "release-list" in recording and recording["release-list"]:
                     for release in recording["release-list"]:
-                        if (
-                            release["release-group"]["type"] == "Album"
-                            or release["release-group"]["type"] == "EP"
+                        release_title = release["title"]
+                        release_type = release["release-group"].get("type", "Unknown")
+
+                        # Avoid duplicates
+                        if not any(
+                            r["title"] == release_title and r["type"] == release_type
+                            for r in releases
                         ):
-                            album = release["title"]
-                            print(f"[INFO] Found album: {album}")
+                            releases.append(
+                                {"title": release_title, "type": release_type}
+                            )
+
+            if releases:
+                print("\n[INFO] Found the following releases:")
+                for idx, release in enumerate(releases, 1):
+                    print(f"  {idx}. [{release['type']}] {release['title']}")
+
+                while True:
+                    try:
+                        choice = input(
+                            "\nEnter the number of the release you want to use (or press Enter for #1): "
+                        ).strip()
+                        if choice == "":
+                            choice = 1
+                        else:
+                            choice = int(choice)
+
+                        if 1 <= choice <= len(releases):
+                            selected = releases[choice - 1]
+                            album = selected["title"]
+                            print(f"[INFO] Selected: [{selected['type']}] {album}")
                             # Remove parentheses and their content from album name
                             album = re.sub(r"\s*\(.*?\)\s*", " ", album).strip()
                             return album
+                        else:
+                            print(
+                                f"[ERROR] Please enter a number between 1 and {len(releases)}"
+                            )
+                    except ValueError:
+                        print("[ERROR] Please enter a valid number")
 
+        print(f"[WARNING] No releases found, using song name as fallback")
         return song
     except Exception as e:
         print(f"[ERROR] Album search failed: {e}, using song name as fallback")
