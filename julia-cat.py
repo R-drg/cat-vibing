@@ -19,7 +19,7 @@ def search_album(artist, song):
     try:
         print(f"[INFO] Searching for album: {artist} - {song}")
         result = musicbrainzngs.search_recordings(
-            artist=artist, recording=song, limit=5
+            artist=artist, recording=song, limit=100
         )
 
         if result["recording-list"]:
