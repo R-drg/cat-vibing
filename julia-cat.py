@@ -35,25 +35,42 @@ def create_cat_video(artist, album, song):
     search_term = artist + " " + song + " audio only"
     download_mp3(search_term)
     image = cv2.imread("temp.jpg")
+
+    # Use album cover dimensions (1000x1000)
+    album_height, album_width = image.shape[:2]
+
     fourcc = cv2.VideoWriter_fourcc("M", "J", "P", "G")
-    out = cv2.VideoWriter("temp.avi", fourcc, 30, (640, 460))
+    out = cv2.VideoWriter("temp.avi", fourcc, 30, (album_width, album_height))
     print("[INFO] Removing green screen...")
     while True:
         ret, frame = video.read()
         if not ret:
             break
-        frame = cv2.resize(frame, (640, 640))
-        image = cv2.resize(image, (640, 640))
+
+        # Resize cat video to match album cover size
+        frame = cv2.resize(frame, (album_width, album_height))
+
+        # Create green screen mask
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         lower_green = np.array([0, 180, 0])
         green = np.array([255, 255, 255])
         mask = cv2.inRange(hsv, lower_green, green)
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (4, 4))
         dilate = cv2.dilate(mask, kernel, iterations=3)
-        res = cv2.bitwise_and(frame, frame, mask=dilate)
-        f = frame - res
-        f = np.where(f == 0, image, f)
-        f = f[10:470, 0:640]
+
+        # Invert mask to get the cat (non-green areas)
+        cat_mask = cv2.bitwise_not(dilate)
+
+        # Extract cat from frame
+        cat_only = cv2.bitwise_and(frame, frame, mask=cat_mask)
+
+        # Create inverse mask for the album cover
+        album_mask = dilate
+        album_with_hole = cv2.bitwise_and(image, image, mask=album_mask)
+
+        # Combine album cover with cat on top
+        f = cv2.add(album_with_hole, cat_only)
+
         out.write(f)
     out.release()
     videoclip = VideoFileClip("temp.avi").subclipped(0, 28)
