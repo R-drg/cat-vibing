@@ -76,6 +76,11 @@ def create_cat_video(artist, song, album=None):
     # Use album cover dimensions (1000x1000)
     album_height, album_width = image.shape[:2]
 
+    # Define cat size
+    cat_scale = 0.7
+    cat_width = int(album_width * cat_scale)
+    cat_height = int(album_height * cat_scale)
+
     fourcc = cv2.VideoWriter_fourcc("M", "J", "P", "G")
     out = cv2.VideoWriter("temp.avi", fourcc, 30, (album_width, album_height))
     print("[INFO] Removing green screen...")
@@ -84,8 +89,8 @@ def create_cat_video(artist, song, album=None):
         if not ret:
             break
 
-        # Resize cat video to match album cover size
-        frame = cv2.resize(frame, (album_width, album_height))
+        # Resize cat video to smaller size
+        frame = cv2.resize(frame, (cat_width, cat_height))
 
         # Create green screen mask
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -101,12 +106,26 @@ def create_cat_video(artist, song, album=None):
         # Extract cat from frame
         cat_only = cv2.bitwise_and(frame, frame, mask=cat_mask)
 
-        # Create inverse mask for the album cover
-        album_mask = dilate
-        album_with_hole = cv2.bitwise_and(image, image, mask=album_mask)
+        # Start with the full album cover
+        f = image.copy()
 
-        # Combine album cover with cat on top
-        f = cv2.add(album_with_hole, cat_only)
+        # Calculate position for bottom-left corner
+        y_offset = album_height - cat_height
+        x_offset = 0
+
+        # Create ROI (Region of Interest) in the bottom-left corner
+        roi = f[y_offset : y_offset + cat_height, x_offset : x_offset + cat_width]
+
+        # Apply the cat mask to the ROI
+        roi_bg = cv2.bitwise_and(roi, roi, mask=dilate)
+
+        # Combine the background ROI with the cat
+        roi_combined = cv2.add(roi_bg, cat_only)
+
+        # Place the combined ROI back into the frame
+        f[y_offset : y_offset + cat_height, x_offset : x_offset + cat_width] = (
+            roi_combined
+        )
 
         out.write(f)
     out.release()
