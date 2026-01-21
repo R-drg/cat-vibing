@@ -4,5 +4,4 @@ sacad
 moviepy
 yt-dlp 
 boto3
-tweepy
 python-dotenv
