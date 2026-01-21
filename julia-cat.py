@@ -42,8 +42,8 @@ def create_cat_video(artist, album, song):
         ret, frame = video.read()
         if not ret:
             break
-        frame = cv2.resize(frame, (640, 480))
-        image = cv2.resize(image, (640, 480))
+        frame = cv2.resize(frame, (640, 640))
+        image = cv2.resize(image, (640, 640))
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         lower_green = np.array([0, 180, 0])
         green = np.array([255, 255, 255])
