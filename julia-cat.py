@@ -32,7 +32,7 @@ def download_mp3(search_string):
 def create_cat_video(artist, album, song):
     video = cv2.VideoCapture("video/cat.mp4")
     os.system('sacad "{0}" "{1}" 1000 temp.jpg'.format(artist, album))
-    search_term = artist + " " + song + " audio"
+    search_term = artist + " " + song + " audio only"
     download_mp3(search_term)
     image = cv2.imread("temp.jpg")
     fourcc = cv2.VideoWriter_fourcc("M", "J", "P", "G")
