@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
 import os
-from moviepy import VideoFileClip, AudioFileClip, CompositeAudioClip
+from moviepy import VideoFileClip, AudioFileClip
 from yt_dlp import YoutubeDL
 import sys
 from dotenv import load_dotenv
 import musicbrainzngs
+import re
 
 load_dotenv()
 
@@ -31,6 +32,8 @@ def search_album(artist, song):
                         ):
                             album = release["title"]
                             print(f"[INFO] Found album: {album}")
+                            # Remove parentheses and their content from album name
+                            album = re.sub(r"\s*\(.*?\)\s*", " ", album).strip()
                             return album
 
         return song
@@ -107,15 +110,34 @@ def create_cat_video(artist, song, album=None):
 
         out.write(f)
     out.release()
-    videoclip = VideoFileClip("temp.avi").subclipped(0, 28)
-    audioclip = AudioFileClip("temp.mp3").subclipped(28, 56)
-    new_audioclip = CompositeAudioClip([audioclip])
-    videoclip.audio = new_audioclip
+
+    # Define the duration you want
+    duration = 28
+    audio_start = 48
+
+    print("[INFO] Loading video and audio clips...")
+    videoclip = VideoFileClip("temp.avi").subclipped(0, duration)
+    audioclip = AudioFileClip("temp.mp3").subclipped(
+        audio_start, audio_start + duration
+    )
+
+    print(f"[INFO] Video duration: {videoclip.duration}s")
+    print(f"[INFO] Audio duration: {audioclip.duration}s")
+
+    # Set the audio using with_audio method
+    final_clip = videoclip.with_audio(audioclip)
+
+    print("[INFO] Writing final video file...")
+    final_clip.write_videofile("output.mp4", codec="libx264", audio_codec="aac")
+
+    # Close clips
+    final_clip.close()
+    audioclip.close()
+
     print("[INFO] Removing temp files...")
     os.remove("temp.jpg")
     os.remove("temp.avi")
     os.remove("temp.mp3")
-    videoclip.write_videofile("output.mp4", audio_codec="aac")
 
 
 if __name__ == "__main__":
