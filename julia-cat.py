@@ -5,8 +5,38 @@ from moviepy import VideoFileClip, AudioFileClip, CompositeAudioClip
 from yt_dlp import YoutubeDL
 import sys
 from dotenv import load_dotenv
+import musicbrainzngs
 
 load_dotenv()
+
+# Configure MusicBrainz
+musicbrainzngs.set_useragent("cat-vibing", "1.0", "your@email.com")
+
+
+# Search for album name based on artist and song
+def search_album(artist, song):
+    try:
+        print(f"[INFO] Searching for album: {artist} - {song}")
+        result = musicbrainzngs.search_recordings(
+            artist=artist, recording=song, limit=5
+        )
+
+        if result["recording-list"]:
+            for recording in result["recording-list"]:
+                if "release-list" in recording and recording["release-list"]:
+                    for release in recording["release-list"]:
+                        if (
+                            release["release-group"]["type"] == "Album"
+                            or release["release-group"]["type"] == "EP"
+                        ):
+                            album = release["title"]
+                            print(f"[INFO] Found album: {album}")
+                            return album
+
+        return song
+    except Exception as e:
+        print(f"[ERROR] Album search failed: {e}, using song name as fallback")
+        return song
 
 
 # search string on youtube and download mp3
@@ -29,7 +59,11 @@ def download_mp3(search_string):
     return mp3_file
 
 
-def create_cat_video(artist, album, song):
+def create_cat_video(artist, song, album=None):
+    # If album is not provided, search for it
+    if album is None:
+        album = search_album(artist, song)
+
     video = cv2.VideoCapture("video/cat.mp4")
     os.system('sacad "{0}" "{1}" 1000 temp.jpg'.format(artist, album))
     search_term = artist + " " + song + " audio only"
@@ -85,7 +119,12 @@ def create_cat_video(artist, album, song):
 
 
 if __name__ == "__main__":
-    album = sys.argv[1]
-    artist = sys.argv[2]
-    song = sys.argv[3]
-    create_cat_video(artist, album, song)
+    if len(sys.argv) < 3:
+        print("Usage: python julia-cat.py <artist> <song> [album]")
+        sys.exit(1)
+
+    artist = sys.argv[1]
+    song = sys.argv[2]
+    album = sys.argv[3] if len(sys.argv) > 3 else None
+
+    create_cat_video(artist, song, album)
